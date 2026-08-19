@@ -1,0 +1,31 @@
+name: Keyword Monitor
+on:
+  repository_dispatch:
+    types: [run-keyword-monitor]
+  workflow_dispatch: {}   # lets you manually trigger a run from the Actions tab
+permissions:
+  contents: write   # needed so the workflow can commit updated state.json back
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5   # fail fast instead of hanging if something stalls
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run keyword monitor
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python3 monitor.py
+      - name: Update heartbeat
+        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > last_run.txt
+      - name: Commit updated state
+        run: |
+          git config user.name "keyword-monitor-bot"
+          git config user.email "actions@github.com"
+          git add state.json last_run.txt
+          git diff --staged --quiet || git commit -m "Update seen-articles state [skip ci]"
+          git push
