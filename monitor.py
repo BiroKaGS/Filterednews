@@ -35,14 +35,15 @@ KEYWORDS = [
     "JAMNAGAR",
     "RIL jamnagar",
     "STPS jamnagar",
-    "gulf of KUTCH",
-    "GEB colony sikka",
+    "GULF OF KUTCH",
+    "GEB COLONY SIKKA",
     "GSECL sikka",
-    "TPS",
-    "mungni",
-     "panchwati sikka",
+    "STPS SIKKA",
+    "MUNGANI",
+     "PANCHWATI SIKKA",
       "bangladeshi migrants",
      "khambhalia",
+  "THERMAL POWER",
 ]
 
 STATE_FILE = "state.json"
