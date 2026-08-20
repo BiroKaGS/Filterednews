@@ -277,10 +277,11 @@ def main():
     finally:
         save_state(seen_links)
 
-    # If all feeds fail, trigger failure exit code for workflow alerting
+    # Change this block at the end of monitor.py:
     if failed_keywords and len(failed_keywords) == len(keyword_targets):
-        print(f"FATAL: All {len(keyword_targets)} keyword feeds failed.")
-        sys.exit(1)
+        print(f"Warning: All {len(keyword_targets)} keyword feeds failed to return data this run.")
+        # Replace sys.exit(1) with a soft warning so workflow state persists
+        # sys.exit(1)
 
 
 if __name__ == "__main__":
