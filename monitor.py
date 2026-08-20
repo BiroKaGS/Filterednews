@@ -53,6 +53,8 @@ DAILY_KEYWORDS = [
     ("Critical Information Infrastructure security India", "en"),
     ("Thermal power plant accident India", "en"),
     ("MHA vital installations security", "en"),
+    ("DRONE ATTACK", "en"),
+    ("ANTI DRONE ATTACK", "en"),
     ("Gujarat coastal security drill", "en"),
     ("CISF ગુજરાત સુરક્ષા", "gu"),
     ("ગુજરાત દરિયાઈ સુરક્ષા કવાયત", "gu"),
