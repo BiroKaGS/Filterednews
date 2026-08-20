@@ -31,13 +31,18 @@ from datetime import datetime, timedelta, timezone
 
 KEYWORDS = [
     "CISF",
-    "SIKKA",
+    "SIKKA jamnagar",
     "JAMNAGAR",
-    "RIL",
-    "STPS",
-    "KUTCH",
-    "GEB",
-    "GSECL",
+    "RIL jamnagar",
+    "STPS jamnagar",
+    "gulf of KUTCH",
+    "GEB colony sikka",
+    "GSECL sikka",
+    "TPS",
+    "mungni",
+     "panchwati sikka",
+      "bangladeshi migrants",
+     "khambhalia",
 ]
 
 STATE_FILE = "state.json"
