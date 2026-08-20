@@ -1,31 +1,59 @@
-name: Keyword Monitor
+name: Security Keyword Monitor
+
 on:
-  repository_dispatch:
-    types: [run-keyword-monitor]
-  workflow_dispatch: {}   # lets you manually trigger a run from the Actions tab
-permissions:
-  contents: write   # needed so the workflow can commit updated state.json back
+  schedule:
+    - cron: '0 * * * *'     # Runs every hour at minute 0 (for Sikka / Jamnagar tactical alerts)
+    - cron: '30 2 * * *'    # Runs once daily at 08:00 AM IST (02:30 UTC) for National/CISF news
+  workflow_dispatch:        # Allows manual run from GitHub Actions UI with mode selection
+    inputs:
+      mode:
+        description: 'Select scan mode to run manually'
+        required: true
+        default: 'hourly'
+        type: choice
+        options:
+          - hourly
+          - daily
+
+concurrency:
+  group: news-monitor-state
+  cancel-in-progress: false
+
 jobs:
-  check:
+  run-monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 5   # fail fast instead of hanging if something stalls
+    permissions:
+      contents: write       # Required to commit state.json back to repository
+
     steps:
-      - name: Check out repo
+      - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Run keyword monitor
+          python-version: '3.11'
+
+      # Step 1: Runs hourly tactical scans (Sikka, GSECL, local Jamnagar, coastal)
+      - name: Run Sikka / Local Hourly Monitor
+        if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'hourly')
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-        run: python3 monitor.py
-      - name: Update heartbeat
-        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > last_run.txt
-      - name: Commit updated state
+        run: python monitor.py --mode hourly
+
+      # Step 2: Runs daily strategic scans (CISF, National critical infrastructure)
+      - name: Run CISF / National Daily Monitor
+        if: github.event.schedule == '30 2 * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'daily')
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python monitor.py --mode daily
+
+      # Step 3: Persist seen article IDs to avoid duplicate notifications
+      - name: Commit and Push State Updates
         run: |
-          git config user.name "keyword-monitor-bot"
-          git config user.email "actions@github.com"
-          git add state.json last_run.txt
-          git diff --staged --quiet || git commit -m "Update seen-articles state [skip ci]"
-          git push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git diff-index --quiet HEAD || (git commit -m "Update state.json [skip ci]" && git push)
