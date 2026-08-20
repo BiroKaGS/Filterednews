@@ -60,7 +60,9 @@ DAILY_KEYWORDS = [
 
 STATE_FILE = "state.json"
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
-NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}" if NTFY_TOPIC else None
+
+# Map priority string names to ntfy integer levels
+PRIORITY_MAP = {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}
 
 SECONDS_BETWEEN_NOTIFICATIONS = 3
 MAX_PAYLOAD_BYTES = 3500
@@ -124,32 +126,40 @@ def fetch_news(keyword, lang="en", max_age_hours=24):
     return items
 
 
-def send_notification(title, message, priority="default", tags="", retries=2):
-    if not NTFY_URL:
+def send_notification(title, message, priority="default", tags=None, retries=2):
+    """Sends notification via JSON payload to support full UTF-8/Gujarati without Latin-1 header issues."""
+    if not NTFY_TOPIC:
         print(f"CRITICAL: NTFY_TOPIC is not set in environment! Message omitted:\n[{title}]")
         return
 
-    headers = {"Title": title, "Priority": priority}
-    if tags:
-        headers["Tags"] = tags
+    payload = {
+        "topic": NTFY_TOPIC,
+        "title": title,
+        "message": message,
+        "priority": PRIORITY_MAP.get(priority, 3),
+        "tags": [t.strip() for t in tags.split(",") if t.strip()] if isinstance(tags, str) else (tags or []),
+    }
+
+    json_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        "https://ntfy.sh",
+        data=json_bytes,
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        method="POST",
+    )
 
     for attempt in range(1, retries + 1):
         try:
-            req = urllib.request.Request(
-                NTFY_URL,
-                data=message.encode("utf-8"),
-                headers=headers,
-                method="POST",
-            )
             with urllib.request.urlopen(req, timeout=15) as res:
                 if res.status == 200:
-                    print(f"Successfully posted alert: '{title}' to {NTFY_URL}")
+                    print(f"Successfully posted alert: '{title}' to topic '{NTFY_TOPIC}'")
             return
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < retries:
                 time.sleep(5 * attempt)
                 continue
-            print(f"HTTP Error sending '{title}': {e}")
+            err_body = e.read().decode("utf-8", errors="ignore")
+            print(f"HTTP Error ({e.code}) sending '{title}': {err_body}")
             return
         except Exception as e:
             print(f"Failed sending '{title}': {e}")
@@ -193,7 +203,7 @@ def main():
     if not NTFY_TOPIC:
         print("ERROR: Environment variable NTFY_TOPIC is EMPTY. Check GitHub Repository Secrets.")
     else:
-        print(f"Target ntfy topic configured: {NTFY_TOPIC[:3]}*** (masked)")
+        print(f"Target ntfy topic active: {NTFY_TOPIC[:3]}***")
 
     keywords = HOURLY_KEYWORDS if args.mode == "hourly" else DAILY_KEYWORDS
     max_age_hours = 24 if args.mode == "hourly" else 48
@@ -235,11 +245,11 @@ def main():
 
     print(f"--- Finished scan. Total new alerts dispatched: {new_total} ---")
 
-    # If hourly has zero new alerts, send a lightweight test heartbeat on manual trigger
+    # Send a heartbeat test alert if manually triggered so you get immediate confirmation
     if new_total == 0 and os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
         now_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
         send_notification(
-            f"Test Ping: {args.mode.capitalize()} Monitor Active",
+            f"✅ Test Ping: {args.mode.capitalize()} Monitor Active",
             f"Workflow manually triggered at {now_str}.\nAll {len(keywords)} queries checked successfully. 0 new articles found.",
             priority="default",
             tags="white_check_mark",
