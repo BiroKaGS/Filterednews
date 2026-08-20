@@ -29,7 +29,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0    # Fetch full history to avoid rebase/push conflicts
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,13 +37,13 @@ jobs:
           python-version: '3.11'
 
       - name: Run Sikka / Local Hourly Monitor
-        if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'hourly')
+        if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == 'hourly' || inputs.mode == 'hourly' || inputs.mode == ''))
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python monitor.py --mode hourly
 
       - name: Run CISF / National Daily Monitor
-        if: github.event.schedule == '30 2 * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'daily')
+        if: github.event.schedule == '30 2 * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == 'daily' || inputs.mode == 'daily'))
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python monitor.py --mode daily
