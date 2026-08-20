@@ -2,9 +2,9 @@ name: Security Keyword Monitor
 
 on:
   schedule:
-    - cron: '0 * * * *'     # Runs every hour at minute 0 (for Sikka / Jamnagar tactical alerts)
-    - cron: '30 2 * * *'    # Runs once daily at 08:00 AM IST (02:30 UTC) for National/CISF news
-  workflow_dispatch:        # Allows manual run from GitHub Actions UI with mode selection
+    - cron: '0 * * * *'     # Runs hourly
+    - cron: '30 2 * * *'    # Runs daily at 08:00 AM IST (02:30 UTC)
+  workflow_dispatch:
     inputs:
       mode:
         description: 'Select scan mode to run manually'
@@ -23,37 +23,35 @@ jobs:
   run-monitor:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # Required to commit state.json back to repository
+      contents: write
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0    # Fetch full history to avoid rebase/push conflicts
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Step 1: Runs hourly tactical scans (Sikka, GSECL, local Jamnagar, coastal)
       - name: Run Sikka / Local Hourly Monitor
         if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'hourly')
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python monitor.py --mode hourly
 
-      # Step 2: Runs daily strategic scans (CISF, National critical infrastructure)
       - name: Run CISF / National Daily Monitor
         if: github.event.schedule == '30 2 * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'daily')
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python monitor.py --mode daily
 
-      # Step 3: Persist seen article IDs to avoid duplicate notifications
       - name: Commit and Push State Updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
           git add state.json
-          git diff-index --quiet HEAD || (git commit -m "Update state.json [skip ci]" && git push)
+          git diff-index --quiet HEAD || (git commit -m "Update state.json [skip ci]" && git push origin HEAD:main)
