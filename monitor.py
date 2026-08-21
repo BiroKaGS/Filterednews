@@ -52,11 +52,16 @@ HOURLY_KEYWORDS = [
 DAILY_KEYWORDS = [
     # CISF Vital Installation & Tactical Security (English)
     ('"CISF" "power plant"', "en"),
+    ('"CISF"', "en"),
+    (' "power plant"', "en"),
+    ('"CISF" "thermal power"', "en"),
+    (' "thermal power"', "en"),
     ('"CISF" "thermal power"', "en"),
     ('"CISF" "Gujarat"', "en"),
     ('"CISF" "Jamnagar"', "en"),
-    ('"CISF" "coastal security"', "en"),
-    ('"CISF" "vital installation"', "en"),
+    ('"Gujarat" "coastal security"', "en"),
+    ('"India" "coastal security"', "en"),
+    (' "vital installation"', "en"),
 
     # Strategic / Infrastructure Threats (English)
     ('critical infrastructure cyber attack India', "en"),
