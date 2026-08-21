@@ -50,12 +50,27 @@ HOURLY_KEYWORDS = [
 ]
 
 DAILY_KEYWORDS = [
-    ('"CISF" ("power plant" OR "vital installation" OR "thermal")', "en"),
-    ('"CISF" ("Gujarat" OR "Jamnagar" OR "coastal")', "en"),
-    ('"Critical Information Infrastructure" India', "en"),
-    ('"DRONE ATTACK" India', "en"),
-    ('"CISF" "સુરક્ષા"', "gu"),
-    ('"ગુજરાત" "દરિયાઈ સુરક્ષા કવાયત"', "gu"),
+    # CISF Vital Installation & Tactical Security (English)
+    ('"CISF" "power plant"', "en"),
+    ('"CISF" "thermal power"', "en"),
+    ('"CISF" "Gujarat"', "en"),
+    ('"CISF" "Jamnagar"', "en"),
+    ('"CISF" "coastal security"', "en"),
+    ('"CISF" "vital installation"', "en"),
+
+    # Strategic / Infrastructure Threats (English)
+    ('critical infrastructure cyber attack India', "en"),
+    ('power plant accident blast India', "en"),
+    ('"drone attack" India', "en"),
+    ('"anti drone" India', "en"),
+    ('Gujarat coastal security drill', "en"),
+
+    # CISF & Strategic Threats (Gujarati Vernacular)
+    # Covers both "CISF" in English and "સીઆઈએસએફ" in Gujarati
+    ('CISF સુરક્ષા ગુજરાત', "gu"),
+    ('સીઆઈએસએફ સુરક્ષા', "gu"),
+    ('ગુજરાત દરિયાઈ સુરક્ષા મોકડ્રીલ', "gu"),
+    ('પાવર પ્લાન્ટ દુર્ઘટના બ્લાસ્ટ', "gu"),
 ]
 
 STATE_FILE = "state.json"
