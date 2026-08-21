@@ -20,52 +20,48 @@ from datetime import datetime, timedelta, timezone
 
 HOURLY_KEYWORDS = [
     # Immediate Installation (English)
-    ("GSECL Sikka", "en"),
-    ("Sikka Thermal Power Station", "en"),
-    ("Sikka TPS", "en"),
-    ("Sikka Port Jamnagar", "en"),
-    ("Digvijaygram Jamnagar", "en"),
+    ('"GSECL" "Sikka"', "en"),
+    ('"Sikka Thermal Power"', "en"),
+    ('"Sikka TPS"', "en"),
+    ('"Sikka Port"', "en"),
+    ('"Digvijaygram"', "en"),
     # Local & Coastal Incidents (English)
-    ("Jamnagar fire blast boiler", "en"),
-    ("Jamnagar protest strike", "en"),
-    ("Jamnagar coastal security", "en"),
-    ("Salaya coastal security", "en"),
-    ("Vadinar port security", "en"),
+    ('Jamnagar ("fire" OR "blast" OR "boiler" OR "explosion")', "en"),
+    ('Jamnagar ("protest" OR "strike" OR "dharna")', "en"),
+    ('Jamnagar ("coastal security" OR "drone" OR "UAV")', "en"),
+    ('Salaya ("coastal security" OR "marine police")', "en"),
+    ('Vadinar ("port security" OR "coastal")', "en"),
     # Immediate Installation (Gujarati)
-    ("સિક્કા વીજ મથક", "gu"),
-    ("સિક્કા પાવર પ્લાન્ટ", "gu"),
-    ("સિક્કા GSECL", "gu"),
-    ("સિક્કા જેટી બંદર", "gu"),
-    ("દિગ્વિજયગ્રામ જામનગર", "gu"),
+    ('"સિક્કા" "વીજ મથક"', "gu"),
+    ('"સિક્કા" "પાવર પ્લાન્ટ"', "gu"),
+    ('"સિક્કા" "GSECL"', "gu"),
+    ('"સિક્કા જેટી" OR "સિક્કા બંદર"', "gu"),
+    ('"દિગ્વિજયગ્રામ"', "gu"),
     # Local Threat & Incidents (Gujarati)
-    ("જામનગર આગ બ્લાસ્ટ બોઈલર", "gu"),
-    ("સિક્કા અકસ્માત દુર્ઘટના", "gu"),
-    ("જામનગર હડતાળ વિરોધ", "gu"),
-    ("સિક્કા ચોરી તોડફોડ", "gu"),
-    # Coastal & Aerial Security (Gujarati)
-    ("સિક્કા જામનગર ડ્રોન ઘૂસણખોરી", "gu"),
-    ("મરીન પોલીસ સિક્કા જામનગર", "gu"),
+    ('જામનગર ("આગ" OR "બ્લાસ્ટ" OR "ધડાકો" OR "બોઈલર")', "gu"),
+    ('સિક્કા ("અકસ્માત" OR "દુર્ઘટના" OR "ચોરી" OR "તોડફોડ")', "gu"),
+    ('જામનગર ("હડતાળ" OR "ધરણા" OR "ચક્કાજામ" OR "વિરોધ")', "gu"),
+    # Coastal Security (Gujarati)
+    (
+        '("સિક્કા" OR "જામનગર દરિયાકાંઠો" OR "સલાયા") ("ડ્રોન" OR "ઘૂસણખોરી" OR "શંકાસ્પદ બોટ")',
+        "gu",
+    ),
+    ('("મરીન પોલીસ" OR "કોસ્ટ ગાર્ડ") ("સિક્કા" OR "જામનગર")', "gu"),
 ]
 
 DAILY_KEYWORDS = [
-    ("CISF security", "en"),
-    ("CISF power plant", "en"),
-    ("Critical Information Infrastructure security India", "en"),
-    ("Thermal power plant accident India", "en"),
-    ("MHA vital installations security", "en"),
-    ("DRONE ATTACK", "en"),
-    ("ANTI DRONE ATTACK", "en"),
-    ("Gujarat coastal security drill", "en"),
-    ("CISF ગુજરાત સુરક્ષા", "gu"),
-    ("ગુજરાત દરિયાઈ સુરક્ષા કવાયત", "gu"),
+    ('"CISF" ("power plant" OR "vital installation" OR "thermal")', "en"),
+    ('"CISF" ("Gujarat" OR "Jamnagar" OR "coastal")', "en"),
+    ('"Critical Information Infrastructure" India', "en"),
+    ('"DRONE ATTACK" India', "en"),
+    ('"CISF" "સુરક્ષા"', "gu"),
+    ('"ગુજરાત" "દરિયાઈ સુરક્ષા કવાયત"', "gu"),
 ]
 
 STATE_FILE = "state.json"
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
 
-# Map priority string names to ntfy integer levels
 PRIORITY_MAP = {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}
-
 SECONDS_BETWEEN_NOTIFICATIONS = 3
 MAX_PAYLOAD_BYTES = 3500
 
@@ -128,10 +124,11 @@ def fetch_news(keyword, lang="en", max_age_hours=24):
     return items
 
 
-def send_notification(title, message, priority="default", tags=None, retries=2):
-    """Sends notification via JSON payload to support full UTF-8/Gujarati without Latin-1 header issues."""
+def send_notification(
+    title, message, priority="default", tags=None, action_url=None, retries=2
+):
     if not NTFY_TOPIC:
-        print(f"CRITICAL: NTFY_TOPIC is not set in environment! Message omitted:\n[{title}]")
+        print(f"CRITICAL: NTFY_TOPIC not set. Omitted: {title}")
         return
 
     payload = {
@@ -139,8 +136,17 @@ def send_notification(title, message, priority="default", tags=None, retries=2):
         "title": title,
         "message": message,
         "priority": PRIORITY_MAP.get(priority, 3),
-        "tags": [t.strip() for t in tags.split(",") if t.strip()] if isinstance(tags, str) else (tags or []),
+        "tags": (
+            [t.strip() for t in tags.split(",") if t.strip()]
+            if isinstance(tags, str)
+            else (tags or [])
+        ),
     }
+
+    if action_url:
+        payload["actions"] = [
+            {"action": "view", "label": "Open News Link", "url": action_url}
+        ]
 
     json_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
@@ -154,7 +160,7 @@ def send_notification(title, message, priority="default", tags=None, retries=2):
         try:
             with urllib.request.urlopen(req, timeout=15) as res:
                 if res.status == 200:
-                    print(f"Successfully posted alert: '{title}' to topic '{NTFY_TOPIC}'")
+                    print(f"Posted alert: '{title}'")
             return
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < retries:
@@ -169,7 +175,9 @@ def send_notification(title, message, priority="default", tags=None, retries=2):
 
 
 def send_keyword_digest(kw, items, priority="high"):
-    formatted_items = [f"{i+1}. {t}\n{l}" for i, (t, l) in enumerate(items)]
+    formatted_items = [
+        f"{i+1}. {title}" for i, (title, link, _) in enumerate(items)
+    ]
     chunks = []
     curr_chunk, curr_len = [], 0
 
@@ -187,25 +195,31 @@ def send_keyword_digest(kw, items, priority="high"):
         chunks.append(curr_chunk)
 
     total = len(chunks)
+    first_link = items[0][1] if items else None
+
     for idx, chunk in enumerate(chunks, 1):
         suffix = f" (Part {idx}/{total})" if total > 1 else ""
         title = f"🚨 {kw} ({len(items)} alerts){suffix}"
         message = "\n\n".join(chunk)
 
-        send_notification(title, message, priority=priority, tags="warning,rotating_light")
+        send_notification(
+            title,
+            message,
+            priority=priority,
+            tags="warning,rotating_light",
+            action_url=first_link,
+        )
         time.sleep(SECONDS_BETWEEN_NOTIFICATIONS)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["hourly", "daily"], default="hourly")
+    parser.add_argument(
+        "--mode", choices=["hourly", "daily"], default="hourly"
+    )
     args = parser.parse_args()
 
     print(f"--- Starting Security Monitor [{args.mode.upper()} MODE] ---")
-    if not NTFY_TOPIC:
-        print("ERROR: Environment variable NTFY_TOPIC is EMPTY. Check GitHub Repository Secrets.")
-    else:
-        print(f"Target ntfy topic active: {NTFY_TOPIC[:3]}***")
 
     keywords = HOURLY_KEYWORDS if args.mode == "hourly" else DAILY_KEYWORDS
     max_age_hours = 24 if args.mode == "hourly" else 48
@@ -214,7 +228,6 @@ def main():
     state = load_state()
     seen_links = state.get("seen_links", [])
     seen_set = set(seen_links)
-    print(f"Loaded {len(seen_links)} existing article IDs from state.json")
 
     results = {}
     with ThreadPoolExecutor(max_workers=min(len(keywords), 8)) as executor:
@@ -224,38 +237,33 @@ def main():
         }
         for future in as_completed(future_to_kw):
             kw = future_to_kw[future]
-            res = future.result()
-            results[kw] = res
+            results[kw] = future.result()
 
     new_total = 0
-    for kw, lang in keywords:
+    for kw, _ in keywords:
         articles = results.get(kw, [])
         new_items = []
         for title, link, guid in articles:
             item_id = guid if guid else link
             if item_id not in seen_set:
-                new_items.append((title, link))
+                new_items.append((title, link, guid))
                 seen_set.add(item_id)
                 seen_links.append(item_id)
 
         if new_items:
-            print(f"Found {len(new_items)} NEW article(s) for query: '{kw}'")
             new_total += len(new_items)
             send_keyword_digest(kw, new_items, priority=alert_priority)
-        else:
-            print(f"Zero new articles for: '{kw}' ({len(articles)} fetched total)")
 
-    print(f"--- Finished scan. Total new alerts dispatched: {new_total} ---")
-
-    # Send a heartbeat test alert if manually triggered so you get immediate confirmation
-    if new_total == 0 and os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
-        now_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
+    # ALWAYS send a status ping if no new articles were found so you know it ran
+    if new_total == 0:
+        ist_now = (datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime("%d-%b %I:%M %p IST")
         send_notification(
-            f"✅ Test Ping: {args.mode.capitalize()} Monitor Active",
-            f"Workflow manually triggered at {now_str}.\nAll {len(keywords)} queries checked successfully. 0 new articles found.",
-            priority="default",
+            f"🛡️ STPS Monitor: {args.mode.capitalize()} Run Active",
+            f"Checked at {ist_now}.\nAll {len(keywords)} security search feeds scanned.\n0 new alerts.",
+            priority="low",
             tags="white_check_mark",
         )
+        print(f"Sent quiet heartbeat for {args.mode} mode.")
 
     save_state(seen_links)
 
