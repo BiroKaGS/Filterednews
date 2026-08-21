@@ -31,6 +31,8 @@ HOURLY_KEYWORDS = [
     ('Jamnagar ("coastal security" OR "drone" OR "UAV")', "en"),
     ('Salaya ("coastal security" OR "marine police")', "en"),
     ('Vadinar ("port security" OR "coastal")', "en"),
+    ('Khambhalia ("port security" OR "coastal")', "en"),
+    ('jamnagar ', "en"),
     # Immediate Installation (Gujarati)
     ('"સિક્કા" "વીજ મથક"', "gu"),
     ('"સિક્કા" "પાવર પ્લાન્ટ"', "gu"),
@@ -55,13 +57,13 @@ DAILY_KEYWORDS = [
     ('"CISF"', "en"),
     (' "power plant"', "en"),
     ('"CISF" "thermal power"', "en"),
-    (' "thermal power"', "en"),
+    (' "thermal power plant attack"', "en"),
     ('"CISF" "thermal power"', "en"),
     ('"CISF" "Gujarat"', "en"),
     ('"CISF" "Jamnagar"', "en"),
     ('"Gujarat" "coastal security"', "en"),
     ('"India" "coastal security"', "en"),
-    (' "vital installation"', "en"),
+    ('"India" "vital installation"', "en"),
 
     # Strategic / Infrastructure Threats (English)
     ('critical infrastructure cyber attack India', "en"),
